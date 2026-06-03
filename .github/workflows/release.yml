@@ -1,0 +1,119 @@
+name: Release
+run-name: "Release ${{ github.ref_name }}"
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and Publish Release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        shell: pwsh
+        # Tag name goes through env, never inline ${{ }} in a run block: git tag
+        # names may contain ", ;, $ and would execute as PowerShell.
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          $tag = $env:TAG_NAME
+          if ($tag -notmatch '^v(\d+\.\d+\.\d+)$') {
+            Write-Host "::error::Tag '$tag' must match v1.2.3"
+            exit 1
+          }
+
+          $version = $Matches[1]
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Write-Host "Release version: $version"
+
+      - name: Validate version matches csproj
+        shell: pwsh
+        run: |
+          [xml]$project = Get-Content src/YapyapHeadTracking/YapyapHeadTracking.csproj
+          $projectVersion = $project.Project.PropertyGroup |
+            Where-Object { $_.Version } |
+            Select-Object -First 1 -ExpandProperty Version
+
+          if ($projectVersion -ne "${{ steps.version.outputs.version }}") {
+            Write-Host "::error::Tag version ${{ steps.version.outputs.version }} does not match csproj version $projectVersion"
+            exit 1
+          }
+
+          Write-Host "Version matches src/YapyapHeadTracking/YapyapHeadTracking.csproj"
+
+      - name: Build release configuration
+        uses: ./.github/actions/build-release
+
+      - name: Package release ZIPs
+        shell: pwsh
+        run: |
+          Write-Host "Packaging release ZIPs..." -ForegroundColor Cyan
+          powershell -ExecutionPolicy Bypass -File scripts/package-release.ps1
+
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "::error::Packaging failed"
+            exit 1
+          }
+
+          Write-Host "Package created" -ForegroundColor Green
+
+      - name: Generate release notes
+        shell: pwsh
+        run: |
+          powershell -ExecutionPolicy Bypass -File cameraunlock-core/scripts/generate-release-notes.ps1 `
+            -Version "${{ steps.version.outputs.version }}" `
+            -ProjectName "Head Tracking for YAPYAP" `
+            -OutputFile release-notes.txt `
+            -ArtifactPaths @(
+              "src/YapyapHeadTracking/",
+              "cameraunlock-core/",
+              "scripts/install.cmd",
+              "scripts/uninstall.cmd"
+            )
+
+      - name: Find release ZIPs
+        id: release-zips
+        shell: pwsh
+        run: |
+          $installerZip = Get-ChildItem -Path release -Filter '*-installer.zip' | Select-Object -First 1
+          $nexusZip = Get-ChildItem -Path release -Filter '*-nexus.zip' | Select-Object -First 1
+
+          if (-not $installerZip) {
+            Write-Host "::error::No installer ZIP found in release/"
+            exit 1
+          }
+
+          if (-not $nexusZip) {
+            Write-Host "::error::No nexus ZIP found in release/"
+            exit 1
+          }
+
+          "installer=$($installerZip.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "nexus=$($nexusZip.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Write-Host "Installer ZIP: $($installerZip.Name)"
+          Write-Host "Nexus ZIP: $($nexusZip.Name)"
+
+      - name: Create GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          gh release create $env:TAG_NAME `
+            --title "Head Tracking for YAPYAP $($env:TAG_NAME)" `
+            --notes-file release-notes.txt `
+            "${{ steps.release-zips.outputs.installer }}" `
+            "${{ steps.release-zips.outputs.nexus }}"

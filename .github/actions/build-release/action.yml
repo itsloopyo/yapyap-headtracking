@@ -1,0 +1,154 @@
+name: Build Release
+description: Extract vendored BepInEx, create Unity stub assemblies, and build the Release configuration
+
+runs:
+  using: composite
+  steps:
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Verify vendored BepInEx integrity
+      shell: pwsh
+      run: |
+        Write-Host "Verifying vendored BepInEx against recorded provenance hash..." -ForegroundColor Cyan
+
+        $vendorZip = "vendor/bepinex/BepInEx_win_x64.zip"
+        $vendorReadme = "vendor/bepinex/README.md"
+        if (-not (Test-Path $vendorZip)) {
+          Write-Host "::error::Vendored BepInEx zip not found at $vendorZip"
+          exit 1
+        }
+        if (-not (Test-Path $vendorReadme)) {
+          Write-Host "::error::Vendor provenance file not found at $vendorReadme"
+          exit 1
+        }
+
+        $readme = Get-Content $vendorReadme -Raw
+        if ($readme -notmatch 'SHA-256:\s*`([0-9a-fA-F]{64})`') {
+          Write-Host "::error::$vendorReadme does not record a SHA-256. Re-run 'pixi run update-deps' and commit."
+          exit 1
+        }
+        $expected = $Matches[1]
+        $actual = (Get-FileHash $vendorZip -Algorithm SHA256).Hash
+
+        if (-not [string]::Equals($actual, $expected, [System.StringComparison]::OrdinalIgnoreCase)) {
+          Write-Host "::error::Vendored BepInEx zip does not match its recorded SHA-256. Expected $expected, got $actual. The vendored binary has been modified without updating provenance - refresh it via 'pixi run update-deps' or restore the committed zip."
+          exit 1
+        }
+
+        Write-Host "Vendored BepInEx hash verified: $actual" -ForegroundColor Green
+
+    - name: Extract vendored BepInEx
+      shell: pwsh
+      run: |
+        Write-Host "Extracting vendored BepInEx..." -ForegroundColor Cyan
+
+        $vendorZip = "vendor/bepinex/BepInEx_win_x64.zip"
+        $libsPath = "src/YapyapHeadTracking/libs"
+        Expand-Archive -Path $vendorZip -DestinationPath bepinex-temp
+        New-Item -ItemType Directory -Path $libsPath -Force | Out-Null
+        Copy-Item bepinex-temp/BepInEx/core/BepInEx.dll $libsPath/
+        Copy-Item bepinex-temp/BepInEx/core/0Harmony.dll $libsPath/
+
+        Remove-Item -Recurse bepinex-temp
+
+        Write-Host "BepInEx DLLs extracted to $libsPath" -ForegroundColor Green
+
+    - name: Create Unity stub assemblies for CI
+      shell: pwsh
+      run: |
+        Write-Host "Creating Unity stub assemblies for CI build..." -ForegroundColor Cyan
+
+        $libsPath = "src/YapyapHeadTracking/libs"
+
+        $projContent = @"
+        <Project Sdk="Microsoft.NET.Sdk">
+          <PropertyGroup>
+            <TargetFramework>net48</TargetFramework>
+            <LangVersion>latest</LangVersion>
+            <AssemblyName>UnityEngine</AssemblyName>
+            <NoWarn>CS0169;CS0649;CS0067;CS0660;CS0661</NoWarn>
+          </PropertyGroup>
+          <ItemGroup>
+            <Compile Include="UnityStubs.cs" />
+          </ItemGroup>
+        </Project>
+        "@
+        $projPath = Join-Path $libsPath "Stub_UnityEngine.csproj"
+        $projContent | Out-File -FilePath $projPath -Encoding utf8
+
+        dotnet build $projPath -c Release -o $libsPath --nologo -v q
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "::error::Failed to build UnityEngine stub"
+            exit 1
+        }
+        Write-Host "  Created UnityEngine.dll" -ForegroundColor Green
+        Remove-Item $projPath -ErrorAction SilentlyContinue
+
+        $emptySource = "// Empty stub assembly"
+        $emptySourcePath = Join-Path $libsPath "EmptyStub.cs"
+        $emptySource | Out-File -FilePath $emptySourcePath -Encoding utf8
+
+        $emptyModules = @(
+            "UnityEngine.CoreModule",
+            "UnityEngine.IMGUIModule",
+            "UnityEngine.PhysicsModule",
+            "UnityEngine.TextRenderingModule",
+            "UnityEngine.InputLegacyModule",
+            "UnityEngine.UIModule",
+            "UnityEngine.UI"
+        )
+
+        foreach ($moduleName in $emptyModules) {
+            $emptyProjContent = @"
+        <Project Sdk="Microsoft.NET.Sdk">
+          <PropertyGroup>
+            <TargetFramework>net48</TargetFramework>
+            <LangVersion>latest</LangVersion>
+            <AssemblyName>$moduleName</AssemblyName>
+          </PropertyGroup>
+          <ItemGroup>
+            <Compile Include="EmptyStub.cs" />
+          </ItemGroup>
+        </Project>
+        "@
+            $emptyProjPath = Join-Path $libsPath "Stub_$moduleName.csproj"
+            $emptyProjContent | Out-File -FilePath $emptyProjPath -Encoding utf8
+
+            dotnet build $emptyProjPath -c Release -o $libsPath --nologo -v q
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "::error::Failed to build $moduleName stub"
+                exit 1
+            }
+            Write-Host "  Created $moduleName.dll" -ForegroundColor Green
+            Remove-Item $emptyProjPath -ErrorAction SilentlyContinue
+        }
+
+        Remove-Item $emptySourcePath -ErrorAction SilentlyContinue
+        Remove-Item (Join-Path $libsPath "*.deps.json") -Force -ErrorAction SilentlyContinue
+        Remove-Item (Join-Path $libsPath "*.pdb") -Force -ErrorAction SilentlyContinue
+        Remove-Item (Join-Path $libsPath "obj") -Recurse -Force -ErrorAction SilentlyContinue
+
+        Write-Host "Unity stub assemblies created successfully" -ForegroundColor Green
+
+    - name: Restore NuGet packages
+      shell: pwsh
+      run: |
+        $unityPath = "${{ github.workspace }}\src\YapyapHeadTracking\libs"
+        dotnet restore src/YapyapHeadTracking/YapyapHeadTracking.csproj "-p:UnityEnginePath=$unityPath"
+
+    - name: Build Release
+      shell: pwsh
+      run: |
+        Write-Host "Building release configuration..." -ForegroundColor Cyan
+        $unityPath = "${{ github.workspace }}\src\YapyapHeadTracking\libs"
+        dotnet build src/YapyapHeadTracking/YapyapHeadTracking.csproj --configuration Release "-p:UnityEnginePath=$unityPath"
+
+        if ($LASTEXITCODE -ne 0) {
+          Write-Host "::error::Release build failed"
+          exit 1
+        }
+
+        Write-Host "Release build succeeded" -ForegroundColor Green

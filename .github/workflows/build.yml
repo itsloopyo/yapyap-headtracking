@@ -1,0 +1,110 @@
+name: Build
+
+on:
+  push:
+    branches: ['**']
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+
+jobs:
+  build:
+    name: Build and Validate
+    runs-on: windows-latest
+    if: ${{ !startsWith(github.event.head_commit.message, 'Release v') }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          submodules: true
+
+      - name: Build release configuration
+        uses: ./.github/actions/build-release
+
+      - name: Verify build outputs
+        shell: pwsh
+        run: |
+          Write-Host "Verifying build outputs..." -ForegroundColor Cyan
+
+          $requiredFiles = @(
+            "src/YapyapHeadTracking/bin/Release/net48/YapyapHeadTracking.dll",
+            "src/YapyapHeadTracking/bin/Release/net48/CameraUnlock.Core.dll",
+            "src/YapyapHeadTracking/bin/Release/net48/CameraUnlock.Core.Unity.dll"
+          )
+
+          $allExist = $true
+          foreach ($file in $requiredFiles) {
+            if (Test-Path $file) {
+              $size = (Get-Item $file).Length / 1KB
+              Write-Host "  $file ($([math]::Round($size, 2)) KB)" -ForegroundColor Green
+            } else {
+              Write-Host "  Missing: $file" -ForegroundColor Red
+              $allExist = $false
+            }
+          }
+
+          if (-not $allExist) {
+            Write-Host "::error::Some build outputs are missing"
+            exit 1
+          }
+
+          Write-Host "All build outputs verified" -ForegroundColor Green
+
+      - name: Package installer
+        shell: pwsh
+        run: |
+          Write-Host "Packaging installer ZIP..." -ForegroundColor Cyan
+          powershell -ExecutionPolicy Bypass -File scripts/package-release.ps1
+
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "::error::Packaging failed"
+            exit 1
+          }
+
+          Write-Host "Package created" -ForegroundColor Green
+
+      - name: Stage installer contents for artifact upload
+        shell: pwsh
+        run: |
+          Write-Host "Staging installer contents..." -ForegroundColor Cyan
+          $installerZip = Get-ChildItem -Path release -Filter '*-installer.zip' | Select-Object -First 1
+          if (-not $installerZip) {
+            Write-Host "::error::No installer ZIP found in release/"
+            exit 1
+          }
+
+          $stageDir = "release/artifact-contents"
+          if (Test-Path $stageDir) {
+            Remove-Item -Recurse -Force $stageDir
+          }
+          New-Item -ItemType Directory -Path $stageDir -Force | Out-Null
+          Expand-Archive -Path $installerZip.FullName -DestinationPath $stageDir -Force
+          Write-Host "Staged contents from $($installerZip.Name)" -ForegroundColor Green
+
+      - name: Compute artifact name from ref
+        id: artifact-name
+        shell: pwsh
+        env:
+          BRANCH_REF: ${{ github.head_ref || github.ref_name }}
+        run: |
+          $branch = $env:BRANCH_REF
+          $sanitized = $branch -replace '[^A-Za-z0-9._-]', '-'
+          $name = "YapyapHeadTracking-$sanitized"
+          Write-Host "Artifact name: $name"
+          "name=$name" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.artifact-name.outputs.name }}
+          path: release/artifact-contents/
+          retention-days: 14
+          if-no-files-found: error
