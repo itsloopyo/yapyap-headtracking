@@ -18,14 +18,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          submodules: true
           fetch-depth: 0
+          submodules: recursive
 
       - name: Extract version from tag
         id: version
         shell: pwsh
-        # Tag name goes through env, never inline ${{ }} in a run block: git tag
-        # names may contain ", ;, $ and would execute as PowerShell.
         env:
           TAG_NAME: ${{ github.ref_name }}
         run: |
@@ -54,21 +52,17 @@ jobs:
 
           Write-Host "Version matches src/YapyapHeadTracking/YapyapHeadTracking.csproj"
 
-      - name: Build release configuration
-        uses: ./.github/actions/build-release
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
 
-      - name: Package release ZIPs
+      - name: Setup pixi
+        uses: prefix-dev/setup-pixi@v0.8.1
+
+      - name: Build and package
         shell: pwsh
-        run: |
-          Write-Host "Packaging release ZIPs..." -ForegroundColor Cyan
-          powershell -ExecutionPolicy Bypass -File scripts/package-release.ps1
-
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "::error::Packaging failed"
-            exit 1
-          }
-
-          Write-Host "Package created" -ForegroundColor Green
+        run: pixi run package
 
       - name: Generate release notes
         shell: pwsh
