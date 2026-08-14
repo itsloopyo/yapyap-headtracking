@@ -88,16 +88,19 @@ jobs:
       - name: Generate release notes
         shell: pwsh
         run: |
-          powershell -ExecutionPolicy Bypass -File cameraunlock-core/scripts/generate-release-notes.ps1 `
+          # Build the array in-step: `powershell -File` binds every argument as
+          # a literal, so the paths arrive as one blob that matches no files.
+          $artifactPaths = @(
+            'src/YapyapHeadTracking',
+            'cameraunlock-core',
+            'scripts/install.cmd',
+            'scripts/uninstall.cmd'
+          )
+          & cameraunlock-core/scripts/generate-release-notes.ps1 `
             -Version "${{ steps.version.outputs.version }}" `
             -ProjectName "Head Tracking for YAPYAP" `
             -OutputFile release-notes.txt `
-            -ArtifactPaths @(
-              "src/YapyapHeadTracking/",
-              "cameraunlock-core/",
-              "scripts/install.cmd",
-              "scripts/uninstall.cmd"
-            )
+            -ArtifactPaths $artifactPaths
 
       - name: Find release ZIPs
         id: release-zips
