@@ -126,8 +126,11 @@ PitchSensitivity = 1
 RollSensitivity = 1
 
 [Smoothing]
-# Rotation smoothing. 0 is responsive, 1 is heavy smoothing.
-Smoothing = 0
+# Smoothing when the tracker runs on this machine (loopback). 0 is responsive, 1 is heavy.
+LocalSmoothing = 0
+
+# Smoothing when the tracker is a remote device on the network. 0 is responsive, 1 is heavy.
+RemoteSmoothing = 0.15
 
 [Position]
 # Enable positional tracking for lean and peek movement.
@@ -144,12 +147,14 @@ PositionLimitY = 0.2
 PositionLimitZ = 0.4
 PositionLimitZBack = 0.1
 
-# Position smoothing. 0 is instant, 1 is very slow.
-PositionSmoothing = 0.15
-
 # Distance in meters from the head pivot to the tracker face point.
 TrackerPivotForward = 0.08
 ```
+
+Smoothing covers both rotation and position. Which of the two values applies is
+decided per connection from the packet source address: a tracker running on this
+PC uses `LocalSmoothing`, a phone or other network device uses `RemoteSmoothing`.
+Switching between them takes effect without restarting the game.
 
 ## Troubleshooting
 
@@ -167,7 +172,7 @@ TrackerPivotForward = 0.08
 
 **Jittery / unstable tracking**
 
-- Increase OpenTrack smoothing or the mod's `Smoothing` setting.
+- Increase OpenTrack smoothing, or the mod's `RemoteSmoothing` (phone/network tracker) or `LocalSmoothing` (tracker on this PC) setting.
 - Use a stable webcam, phone mount, or headset connection.
 - Reduce noisy position input by lowering `PositionSensitivityX`, `PositionSensitivityY`, or `PositionSensitivityZ`.
 

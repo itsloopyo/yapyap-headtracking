@@ -35,6 +35,10 @@ namespace YapyapHeadTracking.Core
         private AnchoredOffsetCompensator _crosshairCompensator;
         private bool _trackingEnabled;
         private bool _wasReceiving;
+        // Last logged connection locality, for edge detection only. The value that
+        // selects LocalSmoothing vs RemoteSmoothing is pushed onto the processors by
+        // the controller, which re-reads it every frame.
+        private bool _cachedIsRemoteConnection;
         private TrackingMode _trackingMode;
         private bool _initialized;
 
@@ -76,7 +80,8 @@ namespace YapyapHeadTracking.Core
 
             _processor = new TrackingProcessor
             {
-                SmoothingFactor = _config.Smoothing.Value,
+                LocalSmoothing = _config.LocalSmoothing.Value,
+                RemoteSmoothing = _config.RemoteSmoothing.Value,
                 Sensitivity = new SensitivitySettings(
                     _config.YawSensitivity.Value,
                     _config.PitchSensitivity.Value,
@@ -90,7 +95,7 @@ namespace YapyapHeadTracking.Core
 
             _positionProcessor = new PositionProcessor
             {
-                Settings = new PositionSettings(
+                Settings = PositionSettings.Symmetric(
                     _config.PositionSensitivityX.Value,
                     _config.PositionSensitivityY.Value,
                     _config.PositionSensitivityZ.Value,
@@ -98,7 +103,8 @@ namespace YapyapHeadTracking.Core
                     _config.PositionLimitY.Value,
                     _config.PositionLimitZ.Value,
                     _config.PositionLimitZBack.Value,
-                    _config.PositionSmoothing.Value,
+                    _config.LocalSmoothing.Value,
+                    _config.RemoteSmoothing.Value,
                     invertX: true, invertY: false, invertZ: true),
                 TrackerPivotForward = _config.TrackerPivotForward.Value
             };
@@ -115,6 +121,12 @@ namespace YapyapHeadTracking.Core
                 _positionProcessor, _positionInterpolator,
                 GameTypes.GetGameMainCamera);
             _cameraController.WorldSpaceYaw = _config.WorldSpaceYaw.Value;
+            // ProcessFrame consumes the tracker app's recenter request itself and has
+            // already recentered by the time this fires, so this only reports it.
+            // Polling the receiver here as well would race it: the request is claimed
+            // with a single Interlocked.Exchange, so exactly one of the two consumers
+            // sees a given CENTER press and the feedback would come and go at random.
+            _cameraController.OnRemoteRecenter = ReportRecentered;
             // Seed the mode from config so the first cycle press transitions away
             // from the current mode rather than back to it.
             SetTrackingMode(_config.PositionEnabled.Value
@@ -158,14 +170,24 @@ namespace YapyapHeadTracking.Core
             // Awake may have failed partway, leaving a subset of fields null.
             // A single guard avoids per-field NRE risk if init ordering changes.
             if (!_initialized) return;
-            if (_receiver.TryConsumeRecenterRequest())
-            {
-                HandleRecenter();
-            }
             _inputHandler.CheckInput();
             _gameStateDetector.Update();
             _notificationUI.Update();
             MonitorConnectionState();
+            MonitorConnectionLocality();
+        }
+
+        // Logs a change in the receiver's connection locality. Read only: the controller
+        // owns the write, pushing the same flag into both processors from ProcessFrame
+        // immediately before either one runs (it owns them from construction), so a
+        // second push here would be redundant rather than authoritative.
+        private void MonitorConnectionLocality()
+        {
+            bool isRemoteConnection = _receiver.IsRemoteConnection;
+            if (isRemoteConnection == _cachedIsRemoteConnection) return;
+
+            _cachedIsRemoteConnection = isRemoteConnection;
+            Logger.LogInfo($"Connection locality changed: remote={isRemoteConnection}");
         }
 
         private void LateUpdate()
@@ -173,7 +195,31 @@ namespace YapyapHeadTracking.Core
             if (!_initialized) return;
             bool shouldTrack = _trackingEnabled && _gameStateDetector.IsGameplayActive;
             bool applying = _cameraController.ProcessFrame(shouldTrack);
+            ConsumeDeferredRecenter();
             UpdateCrosshair(applying);
+        }
+
+        // Fallback consumer for a tracker-app recenter request, running AFTER ProcessFrame
+        // has had its turn on the same latch. The controller only consumes inside its
+        // "tracking enabled and receiving" branch, so a CENTER press in a menu, on a pause
+        // or loading screen, or with tracking toggled off would otherwise go unconsumed -
+        // and the request is a sticky Interlocked latch that nothing clears on disconnect,
+        // so it is not dropped but deferred indefinitely. A press left pending until the
+        // next BeginTrackingSession fires Recenter() mid-transition, which clears the
+        // controller's _recenterOnStabilize and permanently anchors the session to the raw
+        // first-received pose instead of the stabilized one, with a phantom toast attached.
+        //
+        // Ordering makes this safe without duplicating the controller's gate: by the time
+        // this runs the controller has already claimed the request if it was going to, so
+        // TryConsumeRecenterRequest returns false here and this is a no-op. Exactly one of
+        // the two handles any given press, and the choice is a fact rather than a
+        // prediction - which is why this sits here and not next to the gate in Update().
+        private void ConsumeDeferredRecenter()
+        {
+            if (_receiver.TryConsumeRecenterRequest())
+            {
+                HandleRecenter();
+            }
         }
 
         private void OnGUI()
@@ -262,6 +308,11 @@ namespace YapyapHeadTracking.Core
         private void HandleRecenter()
         {
             _cameraController.Recenter();
+            ReportRecentered();
+        }
+
+        private void ReportRecentered()
+        {
             _notificationUI.ShowRecentered();
             Logger.LogInfo("Head tracking recentered");
         }

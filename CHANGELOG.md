@@ -22,3 +22,11 @@ GitHub pre-release; no versioned release has been cut yet.
   auto-recenter on first connection.
 - Hotkeys: nav-cluster keys plus Ctrl+Shift chord alternatives for toggle,
   recenter, cycle tracking mode, and yaw mode.
+
+### Changed
+- Replaced the `Smoothing` and `PositionSmoothing` config keys with
+  `LocalSmoothing` (default 0.0) and `RemoteSmoothing` (default 0.15). The value
+  is selected per connection from the packet source address and covers both
+  rotation and position.
+- Removed the hidden 0.15 baseline smoothing floor, so a tracker running on this
+  PC now gets zero-latency tracking by default.
