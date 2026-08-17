@@ -16,7 +16,7 @@ namespace YapyapHeadTracking.Core
     {
         public const string PluginGUID = "com.cameraunlock.yapyap.headtracking";
         public const string PluginName = "YAPYAP Head Tracking";
-        public const string PluginVersion = "0.0.1";
+        public const string PluginVersion = "0.0.2";
 
         private const float StartupNotificationSeconds = 4f;
         private const float StatusNotificationSeconds = 1.5f;
