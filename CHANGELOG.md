@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.0.1] - 2026-08-18
+
+### Added
+
+- follow core's split of SmoothingFactor into a per-connection pair
+
+### Fixed
+
+- match stub member kinds to the shipped Unity assemblies
+- compile the uGUI stubs into UnityEngine.UI, not UnityEngine
+
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 [Semantic Versioning](https://semver.org/).
