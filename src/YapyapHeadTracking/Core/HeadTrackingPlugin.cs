@@ -105,7 +105,7 @@ namespace YapyapHeadTracking.Core
                     _config.PositionLimitZBack.Value,
                     _config.LocalSmoothing.Value,
                     _config.RemoteSmoothing.Value,
-                    invertX: true, invertY: false, invertZ: true),
+                    invertX: true, invertY: false, invertZ: false),
                 TrackerPivotForward = _config.TrackerPivotForward.Value
             };
             _positionInterpolator = new PositionInterpolator();
