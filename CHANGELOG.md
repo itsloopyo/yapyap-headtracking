@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- `OpenTrack connection established` is now written to `BepInEx/LogOutput.log`
+  whether or not the on-screen connection popup is enabled. It used to sit
+  inside the `ShowConnectionNotifications` gate, so a user who turned the popup
+  off also lost the only evidence in the log that tracker packets ever arrived.
+  The line now also names the UDP port and whether the sender is remote.
+
 ## [0.0.2] - 2026-08-18
 
 ### Changed
@@ -35,12 +45,17 @@ GitHub pre-release; no versioned release has been cut yet.
 - World-locked and camera-local yaw modes.
 - Crosshair compensation that follows the clean aim point.
 - Game-state detection that suppresses tracking outside gameplay.
-- OpenTrack UDP receiver (port 4242) with smoothing, interpolation, and
-  auto-recenter on first connection.
+- OpenTrack UDP receiver (port 4242) with smoothing and interpolation.
 - Hotkeys: nav-cluster keys plus Ctrl+Shift chord alternatives for toggle,
-  recenter, cycle tracking mode, and yaw mode.
+  cycle tracking mode, and yaw mode.
 
 ### Changed
+- The mod keeps no centre of its own. The recenter hotkey (`Home` /
+  `Ctrl+Shift+T`), its `Keybindings/RecenterKey` config entry and the recenter
+  notification are gone. Every tracker app centres itself, so a mod-side centre
+  sat in series with the tracker's and the two drifted apart. Centre in your
+  tracker app instead: OpenTrack's Center bind, or the CENTER button in a phone
+  tracker app.
 - Replaced the `Smoothing` and `PositionSmoothing` config keys with
   `LocalSmoothing` (default 0.0) and `RemoteSmoothing` (default 0.15). The value
   is selected per connection from the packet source address and covers both

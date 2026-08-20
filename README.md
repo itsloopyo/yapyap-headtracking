@@ -68,7 +68,6 @@ The Nav-cluster and Chord columns are equivalent. Use whichever your keyboard ha
 
 | Action | Nav-cluster | Chord |
 |--------|-------------|-------|
-| Recenter | `Home` | `Ctrl+Shift+T` |
 | Toggle tracking | `End` | `Ctrl+Shift+Y` |
 | Cycle tracking mode | `Page Up` | `Ctrl+Shift+G` |
 | Toggle yaw mode | `Page Down` | `Ctrl+Shift+H` |
@@ -105,9 +104,6 @@ CompensateCrosshair = true
 [Keybindings]
 # Key to toggle head tracking on or off.
 ToggleKey = End
-
-# Key to recenter head tracking.
-RecenterKey = Home
 
 # Key to cycle full, rotation only, and position only tracking modes.
 CycleTrackingModeKey = PageUp
@@ -179,7 +175,7 @@ Switching between them takes effect without restarting the game.
 **Wrong rotation axis / yaw feels wrong when looking up or down at extreme angles**
 
 - Toggle between world-locked and camera-local yaw with `Page Down` or `Ctrl+Shift+H`. World-locked (default) keeps yaw horizon-stable no matter where you are pitched; camera-local follows the camera's current up-axis.
-- Recenter with `Home` or `Ctrl+Shift+T` while looking straight at the screen.
+- Sit straight and centre your view in your tracker app (OpenTrack's Center bind, or the CENTER button in a phone tracker app). The mod keeps no centre of its own, it applies the pose the tracker sends.
 - If pitch feels inverted, check your OpenTrack input mapping before changing mod sensitivity.
 
 ## Updating

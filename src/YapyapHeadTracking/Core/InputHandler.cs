@@ -10,12 +10,10 @@ namespace YapyapHeadTracking.Core
         private readonly ConfigManager _config;
 
         public event Action OnTogglePressed;
-        public event Action OnRecenterPressed;
         public event Action OnCycleTrackingModePressed;
         public event Action OnToggleYawModePressed;
 
         public KeyCode ToggleKey => _config.ToggleKey.Value;
-        public KeyCode RecenterKey => _config.RecenterKey.Value;
         public KeyCode CycleTrackingModeKey => _config.CycleTrackingModeKey.Value;
         public KeyCode YawModeKey => _config.YawModeKey.Value;
 
@@ -33,7 +31,6 @@ namespace YapyapHeadTracking.Core
                 return;
 
             Dispatch(_config.ToggleKey.Value, ChordHotkeys.ToggleLetter, OnTogglePressed);
-            Dispatch(_config.RecenterKey.Value, ChordHotkeys.RecenterLetter, OnRecenterPressed);
             Dispatch(_config.CycleTrackingModeKey.Value, ChordHotkeys.PositionLetter, OnCycleTrackingModePressed);
             Dispatch(_config.YawModeKey.Value, ChordHotkeys.FourthToggleLetter, OnToggleYawModePressed);
         }
