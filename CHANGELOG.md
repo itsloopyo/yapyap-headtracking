@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.0] - 2026-08-20
+
+### Fixed
+
+- give the forward lean its own travel budget again
+- stop keeping a mod-side centre, the tracker app owns centring
+
 ## [Unreleased]
 
 ### Fixed
