@@ -26,3 +26,16 @@ CLAUDE.md
 .headtracking-state.json
 tools/*.dll
 NEXUS_MODS.md
+
+# Reverse-engineering and session scratch output. Ignored up front, before
+# anything lands in it: deleting a branch does not unpublish blobs GitHub has
+# already served, so the only reliable control is at push time.
+tools/
+ghidra/
+*.gpr
+*.rep/
+screenshots/
+captures/
+traces/
+dumps/
+*.dmp
