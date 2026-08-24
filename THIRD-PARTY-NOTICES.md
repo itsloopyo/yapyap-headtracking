@@ -12,6 +12,7 @@ YAPYAP.
 | Component | Version | Licence | How it ships |
 |-----------|---------|---------|--------------|
 | BepInEx | v5.4.23.5 | LGPL-2.1 | Bundled verbatim in the installer ZIP |
+| UnityDoorstop | 4.5.0 | LGPL-2.1 | Inside the bundled BepInEx archive (`winhttp.dll`) |
 | HarmonyX | 2.9.0 | MIT | Inside the bundled BepInEx archive (`0Harmony.dll`) |
 | Mono.Cecil | 0.10.4 | MIT | Inside the bundled BepInEx archive |
 | MonoMod | 22.01.29.01 | MIT | Inside the bundled BepInEx archive |
@@ -525,6 +526,23 @@ USA
 
 Exemptions / alternate licenses are available for negotiation.
 ```
+
+---
+
+## UnityDoorstop
+
+Not a dependency we chose separately: BepInEx ships it inside its release
+archive as `winhttp.dll`, the loader that injects BepInEx into the Unity
+runtime. Our installer extracts that archive unchanged, so we redistribute this
+file and it gets its own attribution.
+
+- Upstream: https://github.com/NeighTools/UnityDoorstop
+- Version: `4.5.0` (from `.doorstop_version` inside the vendored archive)
+- Licence: LGPL-2.1, the same text reproduced under BepInEx above
+
+Unmodified, dynamically loaded, never statically linked. Source for the
+unmodified library is available from the upstream repository above, per
+LGPL-2.1 section 6.
 
 ---
 
