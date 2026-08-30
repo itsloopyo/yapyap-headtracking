@@ -14,6 +14,8 @@ An unofficial head tracking mod for YAPYAP that moves the view with your head wh
 ## Features
 
 - **Decoupled look and aim** - head movement rotates the view while your normal controls keep aiming.
+  Spell aim reads the Cinemachine state and the first-person body IK reads the camera rotation, so both
+  follow where you are aiming rather than where you are looking.
 - **6DOF positional tracking** - lean, peek, and shift your viewpoint with supported trackers.
 - **Parallax-correct crosshair** - the crosshair follows the true aim point while the view is head-rotated.
 
