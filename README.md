@@ -235,8 +235,8 @@ Run `uninstall.cmd`. This removes the mod DLLs. BepInEx is only removed if the i
 
 Prerequisites: .NET SDK 8+ and [pixi](https://pixi.sh). No YAPYAP install is
 needed to build: `pixi run setup` compiles the Unity reference assemblies from
-the checked-in stub sources and takes the BepInEx references from the vendored
-loader archive.
+the stub sources in the cameraunlock-core submodule and takes the BepInEx
+references from the vendored loader archive.
 
 ```powershell
 git clone --recursive https://github.com/itsloopyo/yapyap-headtracking.git

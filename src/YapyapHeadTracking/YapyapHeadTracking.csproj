@@ -39,8 +39,8 @@
     </ProjectReference>
   </ItemGroup>
 
-  <!-- Local libs folder (normal build) -->
-  <ItemGroup Condition="Exists('libs\BepInEx.dll') And '$(UseUnityStubs)' != 'true'">
+  <!-- Reference assemblies from libs/, populated by `pixi run setup` -->
+  <ItemGroup Condition="Exists('libs\BepInEx.dll')">
     <Reference Include="BepInEx">
       <HintPath>libs\BepInEx.dll</HintPath>
       <Private>false</Private>
@@ -75,22 +75,6 @@
     </Reference>
     <Reference Include="UnityEngine.UIModule">
       <HintPath>libs\UnityEngine.UIModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-  </ItemGroup>
-
-  <!-- CI stub build -->
-  <ItemGroup Condition="Exists('libs\BepInEx.dll') And '$(UseUnityStubs)' == 'true'">
-    <Reference Include="BepInEx">
-      <HintPath>libs\BepInEx.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="0Harmony">
-      <HintPath>libs\0Harmony.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine">
-      <HintPath>libs\UnityEngine.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>

@@ -16,7 +16,7 @@ YAPYAP.
 | HarmonyX | 2.9.0 | MIT | Inside the bundled BepInEx archive (`0Harmony.dll`) |
 | Mono.Cecil | 0.10.4 | MIT | Inside the bundled BepInEx archive |
 | MonoMod | 22.01.29.01 | MIT | Inside the bundled BepInEx archive |
-| cameraunlock-core | 0f7a63455ddeb91677c9268e88fd35833aa77359 | MIT | Compiled into `YapyapHeadTracking.dll` |
+| cameraunlock-core | b107dc64b6bfe43b25d9c2bf867a6d31ce6b07e0 | MIT | Compiled into `YapyapHeadTracking.dll` |
 | OpenTrack | n/a | ISC | Not bundled; UDP protocol interoperability only |
 
 The BepInEx archive we redistribute carries third-party libraries of its own,
@@ -551,7 +551,7 @@ LGPL-2.1 section 6.
 Git submodule at `cameraunlock-core/`, compiled into `YapyapHeadTracking.dll`. Our own code,
 MIT licensed, reproduced here so the notices are complete.
 
-- Pinned commit: `0f7a63455ddeb91677c9268e88fd35833aa77359`
+- Pinned commit: `b107dc64b6bfe43b25d9c2bf867a6d31ce6b07e0`
 
 ```
 MIT License
