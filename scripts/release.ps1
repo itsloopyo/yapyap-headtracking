@@ -34,6 +34,7 @@ $projectDir = Split-Path -Parent $scriptDir
 $csprojPath = Join-Path $projectDir "src\YapyapHeadTracking\YapyapHeadTracking.csproj"
 $pluginPath = Join-Path $projectDir "src\YapyapHeadTracking\Core\HeadTrackingPlugin.cs"
 $changelogPath = Join-Path $projectDir "CHANGELOG.md"
+$installCmdPath = Join-Path $projectDir "scripts\install.cmd"
 
 Import-Module (Join-Path $projectDir "cameraunlock-core\powershell\ReleaseWorkflow.psm1") -Force
 
@@ -145,12 +146,21 @@ try {
     $pluginContent = $pluginContent -replace 'PluginVersion = "[^"]+"', "PluginVersion = `"$Version`""
     $pluginContent | Set-Content $pluginPath -NoNewline
 
+    # install.cmd's MOD_VERSION is what the install writes into the launcher's
+    # state file, which is where the launcher looks to spot a stale install.
+    $installCmdContent = Get-Content $installCmdPath -Raw
+    if ($installCmdContent -notmatch 'set "MOD_VERSION=[^"]+"') {
+        Exit-WithError "MOD_VERSION line not found in $installCmdPath."
+    }
+    $installCmdContent = $installCmdContent -replace 'set "MOD_VERSION=[^"]+"', "set `"MOD_VERSION=$Version`""
+    $installCmdContent | Set-Content $installCmdPath -NoNewline
+
     & pixi run build
     if ($LASTEXITCODE -ne 0) {
         Exit-WithError "pixi run build failed."
     }
 
-    & git add $csprojPath $pluginPath $changelogPath
+    & git add $csprojPath $pluginPath $installCmdPath $changelogPath
     if ($LASTEXITCODE -ne 0) {
         Exit-WithError "git add failed."
     }
