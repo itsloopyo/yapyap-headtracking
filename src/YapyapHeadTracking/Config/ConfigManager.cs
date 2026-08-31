@@ -104,13 +104,13 @@ namespace YapyapHeadTracking.Config
             // per connection from the packet source address, so a local tracker and a
             // phone on WiFi each get their own setting without a restart.
             LocalSmoothing = config.Bind(
-                "Smoothing", "LocalSmoothing", 0.0f,
+                "Smoothing", "LocalSmoothing", CameraUnlock.Core.Math.SmoothingUtils.DefaultLocalSmoothing,
                 new ConfigDescription(
                     "Smoothing applied when the tracker runs on this machine (loopback). 0 = no smoothing, 1 = heavy.",
                     new AcceptableValueRange<float>(0f, 1f)));
 
             RemoteSmoothing = config.Bind(
-                "Smoothing", "RemoteSmoothing", 0.15f,
+                "Smoothing", "RemoteSmoothing", CameraUnlock.Core.Math.SmoothingUtils.DefaultRemoteSmoothing,
                 new ConfigDescription(
                     "Smoothing applied when the tracker is a remote device on the network. 0 = no smoothing, 1 = heavy.",
                     new AcceptableValueRange<float>(0f, 1f)));
@@ -138,25 +138,25 @@ namespace YapyapHeadTracking.Config
                     new AcceptableValueRange<float>(0f, 5.0f)));
 
             PositionLimitX = config.Bind(
-                "Position", "PositionLimitX", 0.30f,
+                "Position", "PositionLimitX", CameraUnlock.Core.Data.PositionSettings.Default.LimitX,
                 new ConfigDescription(
                     "Maximum lateral displacement in meters",
                     new AcceptableValueRange<float>(0.01f, 0.5f)));
 
             PositionLimitY = config.Bind(
-                "Position", "PositionLimitY", 0.20f,
+                "Position", "PositionLimitY", CameraUnlock.Core.Data.PositionSettings.Default.LimitY,
                 new ConfigDescription(
                     "Maximum vertical displacement in meters",
                     new AcceptableValueRange<float>(0.01f, 0.5f)));
 
             PositionLimitZ = config.Bind(
-                "Position", "PositionLimitZ", 0.40f,
+                "Position", "PositionLimitZ", CameraUnlock.Core.Data.PositionSettings.Default.LimitZ,
                 new ConfigDescription(
                     "Maximum forward displacement in meters",
                     new AcceptableValueRange<float>(0.01f, 0.5f)));
 
             PositionLimitZBack = config.Bind(
-                "Position", "PositionLimitZBack", 0.10f,
+                "Position", "PositionLimitZBack", CameraUnlock.Core.Data.PositionSettings.Default.LimitZBack,
                 new ConfigDescription(
                     "Maximum backward displacement in meters",
                     new AcceptableValueRange<float>(0.01f, 0.5f)));
