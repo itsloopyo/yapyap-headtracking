@@ -17,6 +17,7 @@ An unofficial head tracking mod for YAPYAP that moves the view with your head wh
   Spell aim reads the Cinemachine state and the first-person body IK reads the camera rotation, so both
   follow where you are aiming rather than where you are looking.
 - **6DOF positional tracking** - lean, peek, and shift your viewpoint with supported trackers.
+- **Works with any OpenTrack compatible tracker** - free options available for PC, iOS and Android
 - **Parallax-correct crosshair** - the crosshair follows the true aim point while the view is head-rotated.
 
 ## Requirements
@@ -26,6 +27,13 @@ An unofficial head tracking mod for YAPYAP that moves the view with your head wh
 - Windows 10/11, 64-bit.
 
 ## Installation
+
+### Lopari
+
+Once this mod is available in Lopari, download [Lopari](https://lopari.app), choose **YAPYAP**, and click
+**Play with head tracking**.
+
+### Standalone Installer
 
 1. Download the latest installer ZIP from [Releases](https://github.com/itsloopyo/yapyap-headtracking/releases).
 2. Extract it anywhere.
