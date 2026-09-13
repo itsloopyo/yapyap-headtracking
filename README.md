@@ -2,43 +2,35 @@
 
 ![YAPYAP running with this mod](https://raw.githubusercontent.com/itsloopyo/yapyap-headtracking/main/assets/readme-clip.gif)
 
-An unofficial head tracking mod for YAPYAP that moves the view with your head while your mouse or controller keeps aiming, driven by OpenTrack over UDP, with no VR headset required.
-
-> [!CAUTION]
-> ## Experimental prototype - expect missing core features
->
-> This is **not** a finished mod.
->
-> Current builds may only test whether head tracking can drive the camera. Bug fixes and core features like decoupled look/aim, independent reticle behavior, correct shot direction, off-screen reticle support, movement handling, and comfort tuning may be missing at this early stage of development.
+An unofficial head tracking mod for YAPYAP that moves the view with your head while your mouse or controller keeps aiming, driven by a webcam, phone, or any OpenTrack compatible tracker, with no VR headset required.
 
 ## Features
 
 - **Decoupled look and aim** - head movement rotates the view while your normal controls keep aiming.
-  Spell aim reads the Cinemachine state and the first-person body IK reads the camera rotation, so both
-  follow where you are aiming rather than where you are looking.
-- **6DOF positional tracking** - lean, peek, and shift your viewpoint with supported trackers.
+- **6DOF tracking** - yaw, pitch and roll plus positional lean, peek and duck.
 - **Works with any OpenTrack compatible tracker** - free options available for PC, iOS and Android
-- **Parallax-correct crosshair** - the crosshair follows the true aim point while the view is head-rotated.
+- **Crosshair compensation** - the crosshair follows your aim direction as you turn your head.
 
 ## Requirements
 
 - [YAPYAP on Steam](https://store.steampowered.com/app/3834090/YAPYAP/).
 - [OpenTrack](https://github.com/opentrack/opentrack/releases) or another tracking source that can send OpenTrack UDP data.
 - Windows 10/11, 64-bit.
+- BepInEx 5 x64, included in the standalone installer and provisioned by Lopari.
 
 ## Installation
 
 ### Lopari
 
-Once this mod is available in Lopari, download [Lopari](https://lopari.app), choose **YAPYAP**, and click
+Download [Lopari](https://lopari.app), choose **YAPYAP**, and click
 **Play with head tracking**.
 
 ### Standalone Installer
 
-1. Download the latest installer ZIP from [Releases](https://github.com/itsloopyo/yapyap-headtracking/releases).
+1. Download the ZIP ending in `-installer.zip` from the [latest release](https://github.com/itsloopyo/yapyap-headtracking/releases/latest).
 2. Extract it anywhere.
 3. Double-click `install.cmd`.
-4. Configure OpenTrack to output UDP to `127.0.0.1:4242`.
+4. Configure your tracker using the setup below.
 5. Launch the game.
 
 If the installer cannot find your game, set `YAPYAP_PATH` to the game folder or pass the game folder as the first argument:
@@ -53,17 +45,15 @@ $env:YAPYAP_PATH = "D:\Games\YAPYAP"
 
 1. Install [BepInEx 5 x64](https://github.com/BepInEx/BepInEx/releases) into the YAPYAP game folder.
 2. Run the game once so BepInEx creates its folders.
-3. Copy `YapyapHeadTracking.dll`, `CameraUnlock.Core.dll`, and `CameraUnlock.Core.Unity.dll` into `YAPYAP\BepInEx\plugins\`.
-4. If you downloaded the Nexus ZIP, extract it into the game folder after BepInEx is installed.
+3. From the installer ZIP's `plugins\` folder, copy `YapyapHeadTracking.dll`, `CameraUnlock.Core.dll`, and `CameraUnlock.Core.Unity.dll` into `YAPYAP\BepInEx\plugins\`. If you have the Nexus ZIP instead, extract it into the game folder; it already contains the `BepInEx\plugins\` layout.
+4. Configure your tracker using the setup below, then launch the game.
+
+After launch, `YAPYAP\BepInEx\LogOutput.log` should contain `YAPYAP Head Tracking initialized`.
 
 ## Setting Up OpenTrack
 
-The mod listens for OpenTrack pose data on UDP port `4242`, on every network
-interface. One datagram is six little-endian 64-bit floats in the order
-`x, y, z, yaw, pitch, roll`: position in centimetres, rotation in degrees, 48
-bytes in total. Anything that sends that to that port drives the view.
-OpenTrack's **UDP over network** output sends exactly this, and the steps below
-set it up.
+The mod accepts OpenTrack UDP pose data on port `4242`. Use the webcam,
+phone, or hardware route below that matches your tracker.
 
 1. Install [OpenTrack](https://github.com/opentrack/opentrack/releases).
 2. Pick a tracker under **Input**, using the notes below.
@@ -79,17 +69,16 @@ before buying anything.
 
 ### Phone
 
-A phone app can reach the mod directly, with no OpenTrack on the PC, if it sends
-the datagram described above. Point it at this PC's IP address (run `ipconfig`
-to find it) on port `4242`. Not every phone tracker speaks this protocol, so
-check yours for an OpenTrack or UDP output option first. [Headcam](https://headcam.app)
-sends it, and I wrote it so decent tracking is free for anyone who already owns
-a phone.
+A phone app can reach the mod directly if it sends OpenTrack UDP pose data.
+Point it at this PC's IP address (run `ipconfig` to find it) on port `4242`.
+Check that the app's output supports the OpenTrack UDP protocol.
+[Headcam](https://headcam.app) is my own free phone tracker; it filters on-device
+and can send directly to the mod.
 
 Sending direct works when the app filters its own signal on the device. The
-mod's smoothing is sized to take the edge off a clean signal rather than to
-rescue a noisy one, so a raw feed sent direct will jitter. If it does, point the
-app at OpenTrack's **UDP over network** *input* on some other port, say 5252,
+mod has separate local and remote smoothing settings. If the view shakes while
+your head is still, point the app at OpenTrack's **UDP over network** *input*
+on some other port, say `5252`,
 and let OpenTrack's filters and curves clean it up before its output forwards to
 `127.0.0.1:4242`.
 
@@ -98,7 +87,7 @@ is smoothed with `RemoteSmoothing` rather than `LocalSmoothing`. That includes a
 tracker on this very PC that sends to the machine's own LAN address, because the
 mod reads the source address and not the machine.
 
-### Headset or other hardware
+### VR headset or other hardware
 
 If your device has an OpenTrack input driver, select it under **Input** and use
 the same output settings. OpenTrack's own **Input** list is the authority on
@@ -106,16 +95,9 @@ what it can read; the mod only ever sees what OpenTrack sends.
 
 ### Centring
 
-Centring belongs to your tracker. The mod subtracts no centre of its own: it
-applies the pose it receives exactly as it arrives, so a stream of zeros holds
-the view where the game itself puts it. Press the centre control in your tracker
-(OpenTrack's **Center** bind, or the CENTER button in Headcam) and the tracker
-zeroes its own output, which leaves the view centred with the mod doing nothing.
-
-That is why there is no centre hotkey here and nothing to re-centre in game. Two
-centres in series would drift apart, because each side re-centres at moments the
-other cannot see, and you would end up pressing twice to centre once. If the
-view sits off to one side, centre it in the tracker.
+Centre in your tracker app, using OpenTrack's **Center** bind or Headcam's
+**CENTER** button. The mod keeps no centre of its own. If the view sits off to
+one side, centre it in the tracker.
 
 ## Controls
 
@@ -129,14 +111,24 @@ The Nav-cluster and Chord columns are equivalent. Use whichever your keyboard ha
 
 `Page Up` / `Ctrl+Shift+G` cycles tracking mode:
 
-1. Normal head-tracked gameplay
-2. Positional tracking disabled, rotational tracking enabled
-3. Rotational tracking disabled, positional tracking enabled
-4. Back to normal
+1. Full tracking: rotation and position.
+2. Rotation only: positional tracking disabled.
+3. Position only: rotational tracking disabled.
+
+The next press returns to full tracking. `PositionEnabled = false` starts in
+rotation-only mode.
+
+`Page Down` / `Ctrl+Shift+H` switches between horizon-locked yaw (the default)
+and yaw around the camera's current up-axis. These toggles last for the current
+game session; use the config to set startup behaviour.
+
+There is no recenter key in the mod. Centre in your tracker app.
 
 ## Configuration
 
 The config file is created after the first launch at `YAPYAP\BepInEx\config\com.cameraunlock.yapyap.headtracking.cfg`.
+Close the game before editing it, then relaunch to apply your changes. These
+are the default values:
 
 ```ini
 [General]
@@ -203,15 +195,19 @@ TrackerPivotForward = 0.08
 ```
 
 Smoothing covers both rotation and position. Which of the two values applies is
-decided per connection from the packet source address: a tracker running on this
-PC uses `LocalSmoothing`, a phone or other network device uses `RemoteSmoothing`.
-Switching between them takes effect without restarting the game.
+decided from the packet source address: loopback uses `LocalSmoothing`, other
+addresses use `RemoteSmoothing`. Changing sender takes effect without restarting
+the game. Edit filtering and response curves in your tracker first.
 
 ## Troubleshooting
 
+Start with `YAPYAP\BepInEx\LogOutput.log`. The mod logs initialization, the UDP
+port, and when a tracker connection is established or lost.
+
 **Mod not loading**
 
-- Confirm `YapyapHeadTracking.dll` is in `YAPYAP\BepInEx\plugins\`.
+- Confirm all three DLLs listed under Manual Installation are in `YAPYAP\BepInEx\plugins\`.
+- For a manual install, check that you installed BepInEx **5 x64**.
 - Check `YAPYAP\BepInEx\LogOutput.log` for `YAPYAP Head Tracking`.
 - Re-run `install.cmd` if BepInEx folders are missing.
 
@@ -219,7 +215,18 @@ Switching between them takes effect without restarting the game.
 
 - Confirm OpenTrack is running and output is UDP to `127.0.0.1:4242`.
 - Check `YAPYAP\BepInEx\LogOutput.log` for `OpenTrack connection established`.
-- Tracking applies during gameplay and is suppressed in menus, settings, chat, and spell wheels.
+- Press `End` or `Ctrl+Shift+Y` if tracking is disabled.
+- For a direct phone connection, check the PC's LAN address, port `4242`, and Windows Firewall access for the game.
+
+**Tracking stops in menus or overlays**
+
+**By design:** tracking is suppressed in menus, settings, chat, and spell wheels,
+and when the game loses input focus. Return to gameplay to resume tracking.
+
+**Config changes do not apply**
+
+- Close the game, edit the config at the path above, then relaunch.
+- Use `WorldSpaceYaw` and `PositionEnabled` for startup defaults; the hotkeys change the current session.
 
 **Jittery / unstable tracking**
 
@@ -230,31 +237,50 @@ Switching between them takes effect without restarting the game.
 **Wrong rotation axis / yaw feels wrong when looking up or down at extreme angles**
 
 - Toggle between world-locked and camera-local yaw with `Page Down` or `Ctrl+Shift+H`. World-locked (default) keeps yaw horizon-stable no matter where you are pitched; camera-local follows the camera's current up-axis.
-- Sit straight and centre your view in your tracker app (OpenTrack's Center bind, or the CENTER button in a phone tracker app). The mod keeps no centre of its own, it applies the pose the tracker sends.
+- Centre your view in your tracker app (OpenTrack's **Center** bind or Headcam's **CENTER** button).
 - If pitch feels inverted, check your OpenTrack input mapping before changing mod sensitivity.
+
+**Known limitations**
+
+- Positional lean is limited by the configured distances but does not check walls. If leaning clips the view through geometry, reduce the position limits or select rotation-only mode with `Page Up` / `Ctrl+Shift+G`.
+- Crosshair compensation accounts for head rotation, not parallax from positional lean. Use rotation-only mode if that offset is distracting.
 
 ## Updating
 
-Download the new release and run `install.cmd` again. Your config is preserved.
+For a standalone installation, download the new installer ZIP, extract it, and
+run its `install.cmd`. Your config is preserved. For a manual installation,
+replace the three plugin DLLs with those from the new release and keep your config.
 
 ## Uninstalling
 
-Run `uninstall.cmd`. This removes the mod DLLs. BepInEx is only removed if the installer put it there. Use `uninstall.cmd /force` to remove it anyway.
+For a standalone installation, run `uninstall.cmd`. This removes the mod DLLs.
+BepInEx is only removed if the installer put it there; `/force` also removes a
+pre-existing BepInEx installation. Removing BepInEx removes its plugins and config
+folder too. If other mods use it, use the manual removal steps below.
+
+For a manual uninstall, remove `YapyapHeadTracking.dll`, `CameraUnlock.Core.dll`,
+and `CameraUnlock.Core.Unity.dll` from `YAPYAP\BepInEx\plugins\`. Keep the shared
+CameraUnlock DLLs if another mod uses them. You can also delete
+`YAPYAP\BepInEx\config\com.cameraunlock.yapyap.headtracking.cfg` to remove your
+settings. Keep BepInEx if other mods need it.
 
 ## Building from Source
 
-Prerequisites: .NET SDK 8+ and [pixi](https://pixi.sh). No YAPYAP install is
-needed to build: `pixi run setup` compiles the Unity reference assemblies from
+Prerequisites: Windows, .NET SDK 8, Git and [pixi](https://pixi.sh).
+`pixi run package` runs setup, restore and build before packaging, using the
+same task as CI. Setup compiles the Unity reference assemblies from
 the stub sources in the cameraunlock-core submodule and takes the BepInEx
 references from the vendored loader archive.
 
 ```powershell
 git clone --recursive https://github.com/itsloopyo/yapyap-headtracking.git
 cd yapyap-headtracking
-pixi run setup
-pixi run build
 pixi run package
 ```
+
+The packages are written to `release/` as
+`YapyapHeadTracking-v<version>-installer.zip` and
+`YapyapHeadTracking-v<version>-nexus.zip`.
 
 ## Community & Support
 
@@ -265,6 +291,7 @@ pixi run package
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
+Third-party licence texts and attribution are in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 ## Credits
 
