@@ -25,8 +25,11 @@ build = { cmd = "dotnet build src/YapyapHeadTracking/YapyapHeadTracking.csproj -
 # game. Needs the game installed; skips and succeeds without it.
 verify-refs = { cmd = "powershell -ExecutionPolicy Bypass -File cameraunlock-core/scripts/verify-assembly-refs.ps1 -GameId yapyap -BuildDir src/YapyapHeadTracking/bin/Release", depends-on = ["build"] }
 install = { cmd = "powershell -ExecutionPolicy Bypass -File scripts/deploy.ps1 Release", depends-on = ["build"] }
-test = { cmd = "powershell -ExecutionPolicy Bypass -File scripts/test-installer-contract.ps1 && powershell -ExecutionPolicy Bypass -File scripts/test-find-game-output.ps1", depends-on = ["build"] }
-package = { cmd = "powershell -ExecutionPolicy Bypass -File scripts/package-release.ps1", depends-on = ["build"] }
+# The installer contract checks, then the config tests, among them the differential test in
+# tests/config_differential, which holds the legacy import to the v0.2.0 reader it replaces on
+# every published build's first-run file and on core's mutation corpus.
+test = { cmd = "powershell -ExecutionPolicy Bypass -File scripts/test-installer-contract.ps1 && powershell -ExecutionPolicy Bypass -File scripts/test-find-game-output.ps1 && dotnet test tests/YapyapHeadTracking.Tests/YapyapHeadTracking.Tests.csproj -c Release", depends-on = ["build"] }
+package = { cmd = "powershell -ExecutionPolicy Bypass -File scripts/package-release.ps1", depends-on = ["test"] }
 uninstall = "scripts\\uninstall.cmd /y"
 clean = "dotnet clean src/YapyapHeadTracking/YapyapHeadTracking.csproj"
 release = "powershell -ExecutionPolicy Bypass -File scripts/release.ps1"

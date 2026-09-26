@@ -8,6 +8,7 @@ using CameraUnlock.Core.Unity.Tracking;
 using CameraUnlock.Core.Unity.UI;
 using YapyapHeadTracking.Camera;
 using YapyapHeadTracking.Config;
+using YapyapHeadTracking.Legacy;
 
 namespace YapyapHeadTracking.Core
 {
@@ -22,7 +23,7 @@ namespace YapyapHeadTracking.Core
         private const float StatusNotificationSeconds = 1.5f;
         private const int TrackingModeCount = 3;
 
-        private ConfigManager _config;
+        private ModConfig _config;
         private OpenTrackReceiver _receiver;
         private TrackingProcessor _processor;
         private PoseInterpolator _interpolator;
@@ -48,8 +49,11 @@ namespace YapyapHeadTracking.Core
 
             GameTypes.Log = msg => Logger.LogInfo(msg);
 
-            _config = new ConfigManager();
-            _config.Initialize(Config);
+            _config = LegacyConfigMap.ToRuntime(LegacyConfigReader.Read(Config, out _));
+            // The reader writes nothing; this is the write BepInEx's Bind made on every start,
+            // which creates the .cfg on the first one.
+            Config.SaveOnConfigSet = true;
+            Config.Save();
 
             BuildPipeline();
             BuildCameraController();
@@ -59,14 +63,14 @@ namespace YapyapHeadTracking.Core
             BuildGameStateDetector();
             BuildInput();
 
-            _receiver.Start(_config.UDPPort.Value);
-            _trackingEnabled = _config.EnabledOnStartup.Value;
+            _receiver.Start(_config.UdpPort);
+            _trackingEnabled = _config.EnabledOnStartup;
             _initialized = true;
 
             Logger.LogInfo($"{PluginName} initialized. Tracking {(_trackingEnabled ? "enabled" : "disabled")}");
-            Logger.LogInfo($"Listening on UDP port {_config.UDPPort.Value}");
+            Logger.LogInfo($"Listening on UDP port {_config.UdpPort}");
 
-            if (_config.ShowStartupNotification.Value)
+            if (_config.ShowStartupNotification)
             {
                 string status = _trackingEnabled ? "Head Tracking: ON" : "Head Tracking: OFF";
                 _notificationUI.ShowNotification($"{status}\n{BuildHotkeyInfo()}", StartupNotificationSeconds);
@@ -80,12 +84,12 @@ namespace YapyapHeadTracking.Core
 
             _processor = new TrackingProcessor
             {
-                LocalSmoothing = _config.LocalSmoothing.Value,
-                RemoteSmoothing = _config.RemoteSmoothing.Value,
+                LocalSmoothing = _config.LocalSmoothing,
+                RemoteSmoothing = _config.RemoteSmoothing,
                 Sensitivity = new SensitivitySettings(
-                    _config.YawSensitivity.Value,
-                    _config.PitchSensitivity.Value,
-                    _config.RollSensitivity.Value,
+                    _config.YawSensitivity,
+                    _config.PitchSensitivity,
+                    _config.RollSensitivity,
                     invertYaw: false,
                     invertPitch: true,
                     invertRoll: false),
@@ -96,17 +100,17 @@ namespace YapyapHeadTracking.Core
             _positionProcessor = new PositionProcessor
             {
                 Settings = PositionSettings.Symmetric(
-                    _config.PositionSensitivityX.Value,
-                    _config.PositionSensitivityY.Value,
-                    _config.PositionSensitivityZ.Value,
-                    _config.PositionLimitX.Value,
-                    _config.PositionLimitY.Value,
-                    _config.PositionLimitZ.Value,
-                    _config.PositionLimitZBack.Value,
-                    _config.LocalSmoothing.Value,
-                    _config.RemoteSmoothing.Value,
+                    _config.PositionSensitivityX,
+                    _config.PositionSensitivityY,
+                    _config.PositionSensitivityZ,
+                    _config.PositionLimitX,
+                    _config.PositionLimitY,
+                    _config.PositionLimitZ,
+                    _config.PositionLimitZBack,
+                    _config.LocalSmoothing,
+                    _config.RemoteSmoothing,
                     invertX: true, invertY: false, invertZ: false),
-                TrackerPivotForward = _config.TrackerPivotForward.Value
+                TrackerPivotForward = _config.TrackerPivotForward
             };
             _positionInterpolator = new PositionInterpolator();
         }
@@ -120,10 +124,10 @@ namespace YapyapHeadTracking.Core
                 _receiver, _processor, _interpolator,
                 _positionProcessor, _positionInterpolator,
                 GameTypes.GetGameMainCamera);
-            _cameraController.WorldSpaceYaw = _config.WorldSpaceYaw.Value;
+            _cameraController.WorldSpaceYaw = _config.WorldSpaceYaw;
             // Seed the mode from config so the first cycle press transitions away
             // from the current mode rather than back to it.
-            SetTrackingMode(_config.PositionEnabled.Value
+            SetTrackingMode(_config.PositionEnabled
                 ? TrackingMode.RotationAndPosition
                 : TrackingMode.RotationOnly);
             _cameraController.Enable();
@@ -218,11 +222,9 @@ namespace YapyapHeadTracking.Core
 
         private void UpdateCrosshair(bool trackingApplied)
         {
-            // Restore on the config-off path too: BepInEx configs are runtime-mutable
-            // (ConfigurationManager / file reload), and an offset applied before the
-            // toggle would otherwise stick permanently. Camera resolution stays gated
-            // behind the cheap checks so disabled frames never touch the resolver.
-            bool compensate = _config.CompensateCrosshair.Value && trackingApplied;
+            // Camera resolution stays gated behind the cheap checks so disabled frames
+            // never touch the resolver.
+            bool compensate = _config.CompensateCrosshair && trackingApplied;
             UnityEngine.Vector2 offset;
             if (!compensate || !_cameraController.TryGetAimScreenOffset(out offset))
             {
@@ -244,14 +246,14 @@ namespace YapyapHeadTracking.Core
             // on-screen popup off should not lose the ability to diagnose "no tracking".
             if (isReceiving)
             {
-                Logger.LogInfo($"OpenTrack connection established on port {_config.UDPPort.Value} (remote sender: {_receiver.IsRemoteConnection})");
-                if (_config.ShowConnectionNotifications.Value)
+                Logger.LogInfo($"OpenTrack connection established on port {_config.UdpPort} (remote sender: {_receiver.IsRemoteConnection})");
+                if (_config.ShowConnectionNotifications)
                     _notificationUI.ShowConnectionEstablished();
             }
             else
             {
                 Logger.LogInfo("OpenTrack connection lost");
-                if (_config.ShowConnectionNotifications.Value)
+                if (_config.ShowConnectionNotifications)
                     _notificationUI.ShowConnectionLost();
             }
             _wasReceiving = isReceiving;

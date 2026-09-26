@@ -1,0 +1,36 @@
+# What the differential test compares, and where each file came from.
+# Columns: role, source (tag:path, a release asset, or the path in this repo), sha256 of the bytes.
+# v0.2.0 is the newest published build. The rolling dev pre-release (0.0.0-nightly.20260803.1615059)
+# predates v0.0.1, and there is no predecessor repo. v0.2.0's reader is
+# src/YapyapHeadTracking/Config/ConfigManager.cs, which takes no core source: its defaults are
+# literals. The reader frozen into src/YapyapHeadTracking/Legacy comes from 2900d8d, where the
+# smoothing pair and the position limits are core's constants holding the same values,
+# restructured to fill LegacyConfig and write nothing, so comparison 1 is not empty by
+# construction and runs on every input.
+published reader	v0.2.0:src/YapyapHeadTracking/Config/ConfigManager.cs	41efb1f3c9434708f7fe771ef4d735ee40e0e00209a165eab15998deede2bb1e
+oracle copy	tests/config_differential/oracle/ConfigManager.cs	41efb1f3c9434708f7fe771ef4d735ee40e0e00209a165eab15998deede2bb1e
+frozen from	2900d8d:src/YapyapHeadTracking/Config/ConfigManager.cs	273a92a01c2ddce78bbc27a13a89823ba9e2683e8f9852d4dc01af188139ec3c
+frozen reader	src/YapyapHeadTracking/Legacy/LegacyConfig.cs	a8f3efa6a8deb3b8cadaf1699a98057940c28c6b324a8b6561b661d440c34d62
+frozen reader	src/YapyapHeadTracking/Legacy/LegacyConfigReader.cs	957bb1e6bedb0df961a78927cdfcf37feaec5f2a1f5c9317d197c96eeb1b66d1
+frozen reader	src/YapyapHeadTracking/Legacy/LegacyConfigKeys.cs	a4392cb9fab1b87baad9adae2eea23ee5fa086965e092c553b84a777f25a4c84
+BepInEx	vendor/bepinex/BepInEx_win_x64.zip (BepInEx 5.4.23.5), whose BepInEx.dll the test and the first-run harness run	82f9878551030f54657792c0740d9d51a09500eeae1fba21106b0c441e6732c4
+# No published build shipped the plugin .cfg, in a ZIP or as a launcher-manifest.json seed (every
+# seed is BepInEx/config/BepInEx.cfg), so the inputs are what each build writes at its first start.
+# A first-run file is the .cfg that build's own YapyapHeadTracking.dll, taken from its release
+# installer ZIP (each ZIP's SHA-256 checked against the digest GitHub reports for the asset), writes
+# when its ConfigManager.Initialize runs on a ConfigFile at a path with no file and the plugin's
+# BepInPlugin metadata, as BaseUnityPlugin builds it: the published binary run once under the
+# BepInEx above, with the Unity stubs of pixi run setup. The "Acceptable values" comment lines list
+# the stub's KeyCode members, not the game's; no reader reads a comment line. The dev and v0.0.x
+# files carry keys v0.2.0 no longer binds (RecenterKey, and dev's Smoothing and PositionSmoothing),
+# which BepInEx keeps in the file as orphans and no reader reads.
+input source	release dev YapyapHeadTracking-dev-installer.zip plugins\YapyapHeadTracking.dll 7041e141292412196efe9825949e46fa085fe6911297bdbb84c52413c30e7641	-
+input	tests/config_differential/data/first-run/dev.cfg	62fe141b145b20d868ba06d600a869b16d98370601cb81e89d92e2c61bd2a535
+input source	release v0.0.1 YapyapHeadTracking-v0.0.1-installer.zip plugins/YapyapHeadTracking.dll 2fca45275c0c8ef2ea7ed6d15a92235619001b65247cd36617b363eee7aa85cc	-
+input	tests/config_differential/data/first-run/v0.0.1.cfg	6b9209de0e0ac4ea1c9d597083a164b2fcd21a50ee36f02e7bbcfa88301eec07
+input source	release v0.0.2 YapyapHeadTracking-v0.0.2-installer.zip plugins/YapyapHeadTracking.dll b9d89a3851cc506cc65971ab57331ac934f07721b5fb4119c464455cbafec953	-
+input	tests/config_differential/data/first-run/v0.0.2.cfg	7de6631579abb5abc3d50575b8be481ed71d40372f8b524b4f6a73c10c779d4e
+input source	release v0.1.0 YapyapHeadTracking-v0.1.0-installer.zip plugins/YapyapHeadTracking.dll 1dcbdf6430cc2c3af283b01e65522a61d48515da5a11fb6c7903445a714b7da5	-
+input	tests/config_differential/data/first-run/v0.1.0.cfg	801e63afd519ab18a5d8e0ccdfbf8e52244e193675228e1a3fc1e509a60071dc
+input source	release v0.2.0 YapyapHeadTracking-v0.2.0-installer.zip plugins/YapyapHeadTracking.dll 65310917063741c230a7a78b62fa48ca156bda4a1a9c8b5be7cc96221137c9d5	-
+input	tests/config_differential/data/first-run/v0.2.0.cfg	e725535996ebb96f065f40f7591fb0d2d9082c50722ffa427f49eb386c480393
