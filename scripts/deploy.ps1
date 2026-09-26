@@ -41,5 +41,6 @@ Write-DeploymentSuccess `
         "Page Up   - Cycle tracking mode (full / rotation-only / position-only)",
         "Page Down - Toggle yaw mode (world / local)",
         "",
-        "No nav cluster? Chords: Ctrl+Shift+ Y=Toggle G=Mode H=Yaw"
+        "No nav cluster? Chords: Ctrl+Shift+ Y=Toggle G=Mode H=Yaw",
+        "These are the default keys. BepInEx\config\CameraUnlock.ini sets them."
     )
