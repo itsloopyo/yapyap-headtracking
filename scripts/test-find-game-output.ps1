@@ -10,42 +10,42 @@ $projectDir = Split-Path -Parent $scriptDir
 $findGame = Join-Path $projectDir 'cameraunlock-core/scripts/find-game.ps1'
 
 $root = Join-Path $env:TEMP "cul-find-game-test-$([guid]::NewGuid().ToString('N'))"
-$gamePath = Join-Path $root 'YAPYAP & Percent %Literal%'
 $outFile = Join-Path $root 'resolved.cmd'
+$echoFile = Join-Path $root 'echo.txt'
 
-New-Item -ItemType Directory -Path $gamePath -Force | Out-Null
+New-Item -ItemType Directory -Path $root -Force | Out-Null
 
-try {
-    & $findGame -GameId 'yapyap' -GivenPath $gamePath -OutFile $outFile
-    if ($LASTEXITCODE -ne 0) {
-        throw "find-game.ps1 returned exit code $LASTEXITCODE"
-    }
-
-    $gamePathForBatch = $gamePath -replace '%', '%%'
-    $cmd = @"
+# Reads find-game.ps1's output as the shared install bodies do: `call` with delayed expansion
+# off, then `!GAME_PATH!` with it on, which hands the value back without cmd.exe parsing it.
+$verify = Join-Path $root 'verify.cmd'
+$cmd = @"
 @echo off
-setlocal enabledelayedexpansion
+setlocal disabledelayedexpansion
 call "$outFile"
-if not "!GAME_PATH!"=="$gamePathForBatch" exit /b 10
-echo Game found: "!GAME_PATH!" > "$root\echo.txt"
+setlocal enabledelayedexpansion
+>"$echoFile" echo(!GAME_PATH!
 exit /b 0
 "@
-    $verify = Join-Path $root 'verify.cmd'
-    [System.IO.File]::WriteAllText($verify, $cmd, [System.Text.Encoding]::ASCII)
-    & cmd /c $verify
-    if ($LASTEXITCODE -ne 0) {
-        throw "Generated batch output did not round-trip safely. cmd exit code: $LASTEXITCODE"
-    }
+[System.IO.File]::WriteAllText($verify, $cmd, [System.Text.Encoding]::ASCII)
 
-    $unsafePath = Join-Path $root 'Bang !Path!'
-    New-Item -ItemType Directory -Path $unsafePath -Force | Out-Null
-    $previousErrorActionPreference = $ErrorActionPreference
-    $ErrorActionPreference = 'Continue'
-    & powershell -ExecutionPolicy Bypass -File $findGame -GameId 'yapyap' -GivenPath $unsafePath -OutFile $outFile 2>$null
-    $unsafeExitCode = $LASTEXITCODE
-    $ErrorActionPreference = $previousErrorActionPreference
-    if ($unsafeExitCode -eq 0) {
-        throw "find-game.ps1 accepted a path that cannot survive delayed expansion"
+try {
+    foreach ($leaf in @('YAPYAP & Percent %Literal%', 'Bang !Path! ^caret')) {
+        $gamePath = Join-Path $root $leaf
+        New-Item -ItemType Directory -Path $gamePath -Force | Out-Null
+
+        & $findGame -GameId 'yapyap' -GivenPath $gamePath -OutFile $outFile
+        if ($LASTEXITCODE -ne 0) {
+            throw "find-game.ps1 returned exit code $LASTEXITCODE for $gamePath"
+        }
+
+        & cmd /d /c $verify
+        if ($LASTEXITCODE -ne 0) {
+            throw "Reading the generated batch output failed for $gamePath. cmd exit code: $LASTEXITCODE"
+        }
+        $read = [System.IO.File]::ReadAllText($echoFile, [System.Text.Encoding]::ASCII).TrimEnd("`r", "`n")
+        if ($read -ne $gamePath) {
+            throw "Generated batch output did not round-trip: wrote $gamePath, read back $read"
+        }
     }
 } finally {
     if (Test-Path $root) {

@@ -75,6 +75,15 @@ try {
     Copy-Item (Join-Path $projectDir 'cameraunlock-core\scripts\find-game.ps1') (Join-Path $staging 'shared')
     Copy-Item (Join-Path $projectDir 'cameraunlock-core\powershell\GamePathDetection.psm1') (Join-Path $staging 'shared')
     Copy-Item (Join-Path $projectDir 'cameraunlock-core\data\games.json') (Join-Path $staging 'shared')
+    # The wrappers are thin and dispatch to core's shared bodies, which Copy-SharedBundle
+    # stages beside the files above with the helper scripts the bodies call.
+    $coreScripts = Join-Path $projectDir 'cameraunlock-core\scripts'
+    foreach ($helper in @('install-all-bepinex.ps1', 'check-loader-arch.ps1', 'cecil-marker-check.ps1', 'uninstall-body.cmd')) {
+        Copy-Item (Join-Path $coreScripts $helper) (Join-Path $staging 'shared')
+    }
+    foreach ($body in Get-ChildItem $coreScripts -File -Filter 'install-body-*.cmd') {
+        Copy-Item $body.FullName (Join-Path $staging 'shared')
+    }
 
     $installCmd = Join-Path $staging 'install.cmd'
     $uninstallCmd = Join-Path $staging 'uninstall.cmd'
