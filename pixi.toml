@@ -33,3 +33,8 @@ package = { cmd = "powershell -ExecutionPolicy Bypass -File scripts/package-rele
 uninstall = "scripts\\uninstall.cmd /y"
 clean = "dotnet clean src/YapyapHeadTracking/YapyapHeadTracking.csproj"
 release = "powershell -ExecutionPolicy Bypass -File scripts/release.ps1"
+
+[dependencies]
+# Node runs the canonical config lint in `test`, which `package` depends on, and
+# validate-manifest. Pinned to the release cameraunlock-core's own lock resolves.
+nodejs = "==26.5.0"
