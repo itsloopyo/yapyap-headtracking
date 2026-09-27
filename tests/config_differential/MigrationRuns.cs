@@ -170,7 +170,6 @@ namespace YapyapHeadTracking.Tests.Differential
             line("PositionLimitYDown", LegacyStartup.Text(c.Position.LimitYDown));
             line("PositionLimitZ", LegacyStartup.Text(c.Position.LimitZ));
             line("PositionLimitZBack", LegacyStartup.Text(c.Position.LimitZBack));
-            line("TrackerPivotForward", LegacyStartup.Text(c.TrackerPivotForward));
             line("ToggleKey", c.ToggleKeyName);
             line("CycleTrackingModeKey", c.CycleTrackingModeKeyName);
             line("YawModeKey", c.YawModeKeyName);
@@ -206,7 +205,7 @@ namespace YapyapHeadTracking.Tests.Differential
             s["PositionLimits"] = LegacyStartup.Text(c.Position.LimitX) + " " + LegacyStartup.Text(c.Position.LimitY) + " "
                                   + LegacyStartup.Text(c.Position.LimitYDown) + " " + LegacyStartup.Text(c.Position.LimitZ) + " "
                                   + LegacyStartup.Text(c.Position.LimitZBack);
-            s["TrackerPivotForward"] = LegacyStartup.Text(c.TrackerPivotForward);
+            s["TrackerPivotForward"] = LegacyStartup.Text(YapyapConfig.NeckPivotForward);
             s["ToggleKey"] = c.ToggleKeyName;
             s["CycleTrackingModeKey"] = c.CycleTrackingModeKeyName;
             s["YawModeKey"] = c.YawModeKeyName;

@@ -196,7 +196,7 @@ namespace YapyapHeadTracking.Core
                     _config.LocalSmoothing,
                     _config.RemoteSmoothing,
                     invertX: true, invertY: false, invertZ: false),
-                TrackerPivotForward = _config.TrackerPivotForward
+                TrackerPivotForward = YapyapConfig.NeckPivotForward
             };
             _positionInterpolator = new PositionInterpolator();
         }

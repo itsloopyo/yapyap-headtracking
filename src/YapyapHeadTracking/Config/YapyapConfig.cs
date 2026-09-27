@@ -11,6 +11,12 @@ namespace YapyapHeadTracking.Config
         /// <summary>The game's name as data/games.json spells it.</summary>
         public const string DisplayName = "YAPYAP";
 
+        /// <summary>
+        /// Metres from the neck pivot forward to the point the tracker follows, as every published
+        /// build shipped it. The tracker owns the pivot, so no setting changes it.
+        /// </summary>
+        public const float NeckPivotForward = 0.08f;
+
         public bool ShowStartupNotification { get; set; } = true;
 
         public bool ShowConnectionNotifications { get; set; } = true;
@@ -30,16 +36,12 @@ namespace YapyapHeadTracking.Config
                     ConfigConcepts.PositionLimitYDown,
                     ConfigConcepts.PositionLimitZ,
                     ConfigConcepts.PositionLimitZBack,
-                    ConfigConcepts.TrackerPivotForward,
                     ConfigConcepts.ToggleKey,
                     ConfigConcepts.CycleTrackingModeKey,
                     ConfigConcepts.YawModeKey)
                 .Select(ConfigConcepts.WorldSpaceYaw).Writable()
                 .Select(ConfigConcepts.RotationEnabled).Writable()
                 .Select(ConfigConcepts.PositionEnabled).Writable()
-                .Select(ConfigConcepts.TrackerPivotForward)
-                .Comment("Metres from the pivot of your neck forward to the point the tracker follows.\n" +
-                         "Used to remove the lean that turning your head adds. 0 turns it off.")
                 .Local("Notifications", "ShowStartupNotification", c => c.ShowStartupNotification,
                     (c, v) => c.ShowStartupNotification = v, new BoolCodec(),
                     "true: show whether head tracking is on, and its hotkeys, when the game starts.")
