@@ -83,6 +83,8 @@ try {
         Exit-WithError "Resolved version '$Version' is not a release semver X.Y.Z."
     }
 
+    Assert-ReleaseNotBelowCanonicalSince -RepoRoot $projectDir -Version $Version
+
     $currentBranch = (& git rev-parse --abbrev-ref HEAD).Trim()
     if ($LASTEXITCODE -ne 0) {
         Exit-WithError "Could not determine current git branch."
