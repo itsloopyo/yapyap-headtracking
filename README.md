@@ -4,18 +4,11 @@
 
 An unofficial head tracking mod for YAPYAP that moves the view with your head while your mouse or controller keeps aiming, driven by a webcam, phone, or any OpenTrack compatible tracker, with no VR headset required.
 
-> **Settings have moved.** This version keeps its settings in `BepInEx\config\CameraUnlock.ini`.
-> The first time it starts it reads your settings from the old
-> `BepInEx\config\com.cameraunlock.yapyap.headtracking.cfg` into the new file, and leaves the old
-> file as it was. BepInEx's ConfigurationManager no longer lists the settings: edit
-> `CameraUnlock.ini` with any text editor. [Configuration](#configuration) has the details.
-
 ## Features
 
 - **Decoupled look and aim** - head movement rotates the view while your normal controls keep aiming.
 - **6DOF tracking** - yaw, pitch and roll plus positional lean, peek and duck.
 - **Works with any OpenTrack compatible tracker** - free options available for PC, iOS and Android
-- **Crosshair compensation** - the crosshair follows your aim direction as you turn your head.
 
 ## Requirements
 
@@ -288,7 +281,7 @@ and when the game loses input focus. Return to gameplay to resume tracking.
 
 **Config changes do not apply**
 
-- Close the game, edit `BepInEx\config\CameraUnlock.ini`, then relaunch. Editing the old `.cfg` changes nothing once `CameraUnlock.ini` exists.
+- Close the game, edit `BepInEx\config\CameraUnlock.ini`, then relaunch.
 - Make sure nothing follows the value on the line: text after a value is part of the value. `YAPYAP\BepInEx\LogOutput.log` names each line the mod could not read and the value it used instead.
 
 **Jittery / unstable tracking**
@@ -316,16 +309,14 @@ replace the three plugin DLLs with those from the new release and keep your conf
 ## Uninstalling
 
 For a standalone installation, run `uninstall.cmd`. This removes the mod DLLs and
-leaves `CameraUnlock.ini` and the old `.cfg` in place. BepInEx is only removed if the installer put it there; `/force` also removes a
+leaves `CameraUnlock.ini` in place. BepInEx is only removed if the installer put it there; `/force` also removes a
 pre-existing BepInEx installation. Removing BepInEx removes its plugins and config
 folder too. If other mods use it, use the manual removal steps below.
 
 For a manual uninstall, remove `YapyapHeadTracking.dll`, `CameraUnlock.Core.dll`,
 and `CameraUnlock.Core.Unity.dll` from `YAPYAP\BepInEx\plugins\`. Keep the shared
 CameraUnlock DLLs if another mod uses them. You can also delete
-`YAPYAP\BepInEx\config\CameraUnlock.ini` and
-`YAPYAP\BepInEx\config\com.cameraunlock.yapyap.headtracking.cfg` to remove your
-settings. Keep BepInEx if other mods need it.
+`YAPYAP\BepInEx\config\CameraUnlock.ini` to remove your settings. Keep BepInEx if other mods need it.
 
 ## Building from Source
 
