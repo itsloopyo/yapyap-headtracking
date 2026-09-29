@@ -54,6 +54,10 @@ namespace YapyapHeadTracking.Core
 
             GameTypes.Log = msg => Logger.LogInfo(msg);
 
+            // OnGUI runs every frame for the notification and draws with GUI.Label only, so the
+            // extra Layout event Unity sends per frame for GUILayout is pure cost.
+            useGUILayout = false;
+
             // Built before the config loads, so the owner's status sink can reach the player
             // when the file cannot be read, imported or created.
             _notificationUI = new NotificationUI();

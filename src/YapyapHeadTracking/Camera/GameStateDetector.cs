@@ -41,10 +41,12 @@ namespace YapyapHeadTracking.Camera
 
         public void Update()
         {
-            if (Time.time - _lastCheckTime < CheckIntervalSeconds)
+            // Unscaled: on Time.time a timeScale of 0 would freeze the poll, and the state
+            // it last saw would stand until the clock moved again.
+            if (Time.unscaledTime - _lastCheckTime < CheckIntervalSeconds)
                 return;
 
-            _lastCheckTime = Time.time;
+            _lastCheckTime = Time.unscaledTime;
             UpdateState();
         }
 
